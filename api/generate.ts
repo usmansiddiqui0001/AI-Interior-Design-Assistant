@@ -143,20 +143,23 @@ export default async function handler(request: Request) {
                 const isExterior = roomType.toLowerCase() === 'exterior';
 
                 const textPrompt = isExterior
-                    ? `Redesign this building exterior into a "${style}" style.
-- The building's structure (walls, windows, doors, roof) must not change.
-- The new main color is ${primaryColor}.
-- The new trim/accent color is ${accentColor}.
-- Add new landscaping and outdoor decor: ${furnitureList}.
-- The new lighting is ${designPlan.lighting}.
-The result must be a photorealistic image only.`
-                    : `Redesign this ${roomType} into a "${style}" style.
-- The room's structure (walls, windows, doors) must not change.
-- The new wall color is ${primaryColor} with ${accentColor} accents.
-- The new flooring is ${designPlan.flooring}.
-- Remove all existing furniture and add this new furniture: ${furnitureList}.
-- The new lighting is: ${designPlan.lighting}.
-The result must be a photorealistic image only.`;
+                    ? `You are an image editing AI. Modify the input image of this building exterior according to these rules:
+- **Keep Structure:** The walls, windows, doors, and roof must remain the same.
+- **Set Style:** The new style is "${style}".
+- **Set Palette:** The main color is "${primaryColor}". The trim/accent color is "${accentColor}".
+- **Add Landscaping:** Add new landscaping and outdoor decor, including: ${furnitureList}.
+- **Set Lighting:** The new lighting is "${designPlan.lighting}".
+
+Produce only the final, photorealistic image.`
+                    : `You are an image editing AI. Modify the input image of this ${roomType} according to these rules:
+- **Keep Structure:** The walls, windows, and doors must remain the same.
+- **Set Style:** The new style is "${style}".
+- **Set Palette:** Wall color is "${primaryColor}". Accent color is "${accentColor}".
+- **Set Floor:** Flooring is "${designPlan.flooring}".
+- **Set Lighting:** Lighting should be "${designPlan.lighting}".
+- **Replace Furniture:** Remove all current furniture. Add the following new items: ${furnitureList}.
+
+Produce only the final, photorealistic image.`;
 
                 const textPart = { text: textPrompt.trim() };
 
