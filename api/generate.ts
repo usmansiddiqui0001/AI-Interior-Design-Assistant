@@ -137,14 +137,34 @@ export default async function handler(request: Request) {
                 const { designPlan, style, roomType, base64Image, newColors } = payload as { designPlan: DesignPlan, style: string, roomType: string, base64Image: string, newColors?: ColorPalette };
 
                 const imagePart = { inlineData: { mimeType: 'image/jpeg', data: base64Image } };
-                const furnitureList = designPlan.furnitureSuggestions.map(f => `- ${f.name} (${f.description}) placed at: ${f.placement}`).join('\n');
+                // Simplified furniture list to be more concise for the image model.
+                const furnitureList = designPlan.furnitureSuggestions.map(f => f.name).join(', ');
                 const primaryColor = newColors?.color || designPlan.wallColor.color;
                 const accentColor = newColors?.accent || designPlan.wallColor.accent;
                 const isExterior = roomType.toLowerCase() === 'exterior';
   
+                // Simplified and structured the prompt for better reliability with the image model.
                 const textPrompt = isExterior
-                    ? `You are an expert architectural visualization AI. Redesign this building's exterior photo to have a "${style}" aesthetic. **Strictly preserve the original building's architecture**, including the roofline, windows, and doors. Recolor the exterior surfaces with "${primaryColor}" as the main color and "${accentColor}" for trim and accents. Replace the landscaping and any movable objects with new ones that fit the style, including these key elements: ${furnitureList}. The lighting should be bright and natural, as described by "${designPlan.lighting}". The final output must be a single, photorealistic image with no text.`
-                    : `You are an expert virtual staging AI. Redesign this ${roomType} photo to have a "${style}" aesthetic. **Strictly preserve the original room's architecture**, including walls, windows, and doors. Apply a "${primaryColor}" paint to the walls, using "${accentColor}" for accents. Replace the floor with "${designPlan.flooring}". Completely remove the old furniture and add the following new items, arranging them naturally: ${furnitureList}. The lighting should feel like "${designPlan.lighting}". The final output must be a single, photorealistic image with no text.`;
+                    ? `Task: Redesign the exterior of this building.
+Style: "${style}".
+Instructions:
+1. Keep the original building structure (architecture, windows, roof).
+2. Change main surface color to "${primaryColor}".
+3. Change trim and accent color to "${accentColor}".
+4. Replace landscaping and any movable objects to fit the style. Include: ${furnitureList}.
+5. Set lighting to be "${designPlan.lighting}".
+Goal: A single, photorealistic image. No text.`
+                    : `Task: Redesign the interior of this ${roomType}.
+Style: "${style}".
+Instructions:
+1. Keep the original room structure (walls, windows, doors).
+2. Change wall color to "${primaryColor}" (main) and "${accentColor}" (accent).
+3. Change flooring to "${designPlan.flooring}".
+4. Remove all old furniture.
+5. Add new furniture: ${furnitureList}.
+6. Set lighting to be "${designPlan.lighting}".
+Goal: A single, photorealistic image. No text.`;
+
 
                 const textPart = { text: textPrompt.trim() };
 
