@@ -142,23 +142,9 @@ export default async function handler(request: Request) {
                 const accentColor = newColors?.accent || designPlan.wallColor.accent;
                 const isExterior = roomType.toLowerCase() === 'exterior';
   
-                let textPrompt = isExterior
-                    ? `Act as a professional architectural visualizer. Your task is to photorealistically redesign the given image of a building exterior to match a "${style}" style.
-Follow these instructions precisely:
-1.  **Do not change the building's architecture**: The roofline, windows, doors, and structural walls must remain in their original positions.
-2.  **Replace surfaces**: Change the primary exterior color to "${primaryColor}". Use "${accentColor}" for trim, doors, and other accents.
-3.  **Replace surroundings**: Remove all original landscaping and movable objects. Add new landscaping and decor elements suitable for a "${style}" aesthetic, including:
-    ${furnitureList}
-4.  **Set the scene**: Render the scene in bright, natural daylight, as described by "${designPlan.lighting}".
-5.  **Output**: The final output must be a high-quality, photorealistic image only. Do not add text to the image.`
-                    : `Act as a professional virtual stager. Your task is to photorealistically redesign the given image of a ${roomType} to match a "${style}" style.
-Follow these instructions precisely:
-1.  **Do not change the room's core structure**: Walls, windows, doors, and ceiling must remain in their original positions.
-2.  **Replace surfaces**: Change the wall color to "${primaryColor}" with "${accentColor}" as an accent. Replace the flooring with "${designPlan.flooring}".
-3.  **Replace contents**: Remove all original furniture and decor. Add and arrange the following new items to create a cohesive design:
-    ${furnitureList}
-4.  **Set the mood**: Implement lighting that matches a "${designPlan.lighting}" description to create a warm and inviting atmosphere.
-5.  **Output**: The final output must be a high-quality, photorealistic image only. Do not add text to the image.`;
+                const textPrompt = isExterior
+                    ? `You are an expert architectural visualization AI. Redesign this building's exterior photo to have a "${style}" aesthetic. **Strictly preserve the original building's architecture**, including the roofline, windows, and doors. Recolor the exterior surfaces with "${primaryColor}" as the main color and "${accentColor}" for trim and accents. Replace the landscaping and any movable objects with new ones that fit the style, including these key elements: ${furnitureList}. The lighting should be bright and natural, as described by "${designPlan.lighting}". The final output must be a single, photorealistic image with no text.`
+                    : `You are an expert virtual staging AI. Redesign this ${roomType} photo to have a "${style}" aesthetic. **Strictly preserve the original room's architecture**, including walls, windows, and doors. Apply a "${primaryColor}" paint to the walls, using "${accentColor}" for accents. Replace the floor with "${designPlan.flooring}". Completely remove the old furniture and add the following new items, arranging them naturally: ${furnitureList}. The lighting should feel like "${designPlan.lighting}". The final output must be a single, photorealistic image with no text.`;
 
                 const textPart = { text: textPrompt.trim() };
 
