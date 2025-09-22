@@ -141,25 +141,22 @@ export default async function handler(request: Request) {
                 const primaryColor = newColors?.color || designPlan.wallColor.color;
                 const accentColor = newColors?.accent || designPlan.wallColor.accent;
                 const isExterior = roomType.toLowerCase() === 'exterior';
-  
-                const textPrompt = isExterior
-                    ? `Photorealistic exterior building makeover in a "${style}" style.
-Key changes:
-- Main surface color: ${primaryColor}.
-- Trim and accent color: ${accentColor}.
-- Landscaping and outdoor furniture: ${furnitureList}.
-- Lighting style: ${designPlan.lighting}.
-IMPORTANT: Do not change the building's architecture (windows, doors, roof). The output must be an image only, with no text.`
-                    : `Photorealistic interior design makeover of a ${roomType}.
-Design Style: ${style}.
-Key changes:
-- Remove all existing furniture.
-- Wall colors: ${primaryColor} with ${accentColor} accents.
-- Flooring: ${designPlan.flooring}.
-- New furniture to add: ${furnitureList}.
-- Lighting style: ${designPlan.lighting}.
-IMPORTANT: Do not change the room's architecture (windows, doors, walls). The output must be an image only, with no text.`;
 
+                const textPrompt = isExterior
+                    ? `Redesign this building exterior into a "${style}" style.
+- The building's structure (walls, windows, doors, roof) must not change.
+- The new main color is ${primaryColor}.
+- The new trim/accent color is ${accentColor}.
+- Add new landscaping and outdoor decor: ${furnitureList}.
+- The new lighting is ${designPlan.lighting}.
+The result must be a photorealistic image only.`
+                    : `Redesign this ${roomType} into a "${style}" style.
+- The room's structure (walls, windows, doors) must not change.
+- The new wall color is ${primaryColor} with ${accentColor} accents.
+- The new flooring is ${designPlan.flooring}.
+- Remove all existing furniture and add this new furniture: ${furnitureList}.
+- The new lighting is: ${designPlan.lighting}.
+The result must be a photorealistic image only.`;
 
                 const textPart = { text: textPrompt.trim() };
 
