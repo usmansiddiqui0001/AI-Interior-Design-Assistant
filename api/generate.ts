@@ -142,26 +142,35 @@ export default async function handler(request: Request) {
                 const accentColor = newColors?.accent || designPlan.wallColor.accent;
                 const isExterior = roomType.toLowerCase() === 'exterior';
 
-                const textPrompt = isExterior
-                    ? `You are an image editing AI. Modify the input image of this building exterior according to these rules:
-- **Keep Structure:** The walls, windows, doors, and roof must remain the same.
-- **Set Style:** The new style is "${style}".
-- **Set Palette:** The main color is "${primaryColor}". The trim/accent color is "${accentColor}".
-- **Add Landscaping:** Add new landscaping and outdoor decor, including: ${furnitureList}.
-- **Set Lighting:** The new lighting is "${designPlan.lighting}".
+                let textPrompt: string;
 
-Produce only the final, photorealistic image.`
-                    : `You are an image editing AI. Modify the input image of this ${roomType} according to these rules:
-- **Keep Structure:** The walls, windows, and doors must remain the same.
-- **Set Style:** The new style is "${style}".
-- **Set Palette:** Wall color is "${primaryColor}". Accent color is "${accentColor}".
-- **Set Floor:** Flooring is "${designPlan.flooring}".
-- **Set Lighting:** Lighting should be "${designPlan.lighting}".
-- **Replace Furniture:** Remove all current furniture. Add the following new items: ${furnitureList}.
-
-Produce only the final, photorealistic image.`;
-
-                const textPart = { text: textPrompt.trim() };
+                if (isExterior) {
+                    textPrompt = `
+                        **Task**: Edit the building exterior image.
+                        **Goal**: Achieve a photorealistic "${style}" style.
+                        **Modifications**:
+                        1.  **Colors**: Main color should be "${primaryColor}", with "${accentColor}" for trim and accents.
+                        2.  **Landscaping**: Add new landscaping and outdoor elements like: ${furnitureList}.
+                        3.  **Lighting**: Update lighting to be "${designPlan.lighting}".
+                        4.  **Structure**: Do NOT change the building's core structure (walls, windows, doors, roof).
+                        **Output**: Return ONLY the modified image. Do not output any text.
+                    `.trim();
+                } else {
+                    textPrompt = `
+                        **Task**: Redesign the interior of this ${roomType}.
+                        **Goal**: Achieve a photorealistic "${style}" style.
+                        **Modifications**:
+                        1.  **Remove**: Remove all existing furniture and decor from the image.
+                        2.  **Walls**: Change the wall color to "${primaryColor}".
+                        3.  **Flooring**: Change the floor to "${designPlan.flooring}".
+                        4.  **Add Furniture**: Add the following new items, arranged naturally: ${furnitureList}.
+                        5.  **Lighting**: Update the room's lighting to be "${designPlan.lighting}".
+                        6.  **Structure**: Do NOT change the room's core structure (walls, windows, doors).
+                        **Output**: Return ONLY the redesigned image. Do not output any text.
+                    `.trim();
+                }
+                
+                const textPart = { text: textPrompt };
 
                 const response = await ai.models.generateContent({
                     model: 'gemini-2.5-flash-image-preview',
