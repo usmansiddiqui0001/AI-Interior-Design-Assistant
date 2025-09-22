@@ -143,31 +143,24 @@ export default async function handler(request: Request) {
                 const isExterior = roomType.toLowerCase() === 'exterior';
 
                 let textPrompt: string;
-
                 if (isExterior) {
-                    textPrompt = `
-                        **Task**: Edit the building exterior image.
-                        **Goal**: Achieve a photorealistic "${style}" style.
-                        **Modifications**:
-                        1.  **Colors**: Main color should be "${primaryColor}", with "${accentColor}" for trim and accents.
-                        2.  **Landscaping**: Add new landscaping and outdoor elements like: ${furnitureList}.
-                        3.  **Lighting**: Update lighting to be "${designPlan.lighting}".
-                        4.  **Structure**: Do NOT change the building's core structure (walls, windows, doors, roof).
-                        **Output**: Return ONLY the modified image. Do not output any text.
-                    `.trim();
+                    textPrompt = `Task: Redesign this building exterior in a photorealistic "${style}" style.
+Instructions:
+1. Change the main color to "${primaryColor}" with "${accentColor}" accents.
+2. Update landscaping and add outdoor items: ${furnitureList}.
+3. The lighting should be "${designPlan.lighting}".
+4. IMPORTANT: Do not alter the building's core structure (walls, windows, roof).
+Output: Return ONLY the final, edited image without any surrounding text or explanation.`;
                 } else {
-                    textPrompt = `
-                        **Task**: Redesign the interior of this ${roomType}.
-                        **Goal**: Achieve a photorealistic "${style}" style.
-                        **Modifications**:
-                        1.  **Remove**: Remove all existing furniture and decor from the image.
-                        2.  **Walls**: Change the wall color to "${primaryColor}".
-                        3.  **Flooring**: Change the floor to "${designPlan.flooring}".
-                        4.  **Add Furniture**: Add the following new items, arranged naturally: ${furnitureList}.
-                        5.  **Lighting**: Update the room's lighting to be "${designPlan.lighting}".
-                        6.  **Structure**: Do NOT change the room's core structure (walls, windows, doors).
-                        **Output**: Return ONLY the redesigned image. Do not output any text.
-                    `.trim();
+                    textPrompt = `Task: Redesign the interior of this ${roomType} photorealistically in the "${style}" style.
+Instructions:
+1. Remove ALL existing furniture, decor, and items from the room.
+2. Change the wall color to "${primaryColor}".
+3. Change the floor to "${designPlan.flooring}".
+4. Add the following new furniture, arranged in a natural and functional layout: ${furnitureList}.
+5. Adjust the lighting to be like "${designPlan.lighting}".
+6. IMPORTANT: Do not alter the room's core structure (windows, doors, architectural features).
+Output: Return ONLY the final, redesigned image without any surrounding text or explanation.`;
                 }
                 
                 const textPart = { text: textPrompt };
@@ -179,6 +172,8 @@ export default async function handler(request: Request) {
                 });
 
                 const candidate = response.candidates?.[0];
+                
+                // Happy path: find and return the image
                 if (candidate?.content?.parts) {
                     for (const part of candidate.content.parts) {
                         if (part.inlineData && part.inlineData.data) {
@@ -186,8 +181,27 @@ export default async function handler(request: Request) {
                         }
                     }
                 }
+
+                // Error path: log details and throw a specific error
+                console.error("Image generation failed. Full API response:", JSON.stringify(response, null, 2));
+
+                const finishReason = candidate?.finishReason;
+                const safetyRatings = candidate?.safetyRatings;
+                const textResponse = candidate?.content?.parts?.map(p => p.text).filter(Boolean).join(' ') || '[No text response]';
+
+                let errorMessage = "The AI did not return a redesigned image.";
+                if (finishReason === 'SAFETY') {
+                    const blockedCategories = safetyRatings?.filter(r => r.blocked).map(r => r.category).join(', ') || 'unknown';
+                    errorMessage = `Image generation was blocked by safety filters for the following reasons: ${blockedCategories}.`;
+                } else if (textResponse !== '[No text response]') {
+                    errorMessage = `The AI returned a text message instead of an image: "${textResponse}"`;
+                } else if (finishReason) {
+                    errorMessage += ` The process stopped unexpectedly. Reason: ${finishReason}.`;
+                } else if (!candidate) {
+                    errorMessage = "The AI returned no valid candidates in the response.";
+                }
                 
-                throw new Error("The AI did not return a redesigned image. The response was valid but contained no image data.");
+                throw new Error(errorMessage);
             }
 
             case 'generateMorePalettes': {
