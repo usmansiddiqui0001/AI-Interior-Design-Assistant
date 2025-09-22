@@ -27,11 +27,11 @@ const designPlanSchema = {
     },
     lighting: {
       type: Type.STRING,
-      description: "Suggestions for lighting fixtures (e.g., 'A large, arched floor lamp and recessed ceiling lights').",
+      description: "Suggestions for lighting fixtures. Keep this concise (e.g., 'Arched floor lamp and recessed lights').",
     },
     flooring: {
       type: Type.STRING,
-      description: "Recommendations for flooring (e.g., 'Light oak hardwood floors or a large, neutral-toned area rug').",
+      description: "Recommendations for flooring. Keep this concise (e.g., 'Light oak hardwood floors').",
     },
     furnitureSuggestions: {
       type: Type.ARRAY,
@@ -137,33 +137,28 @@ export default async function handler(request: Request) {
                 const { designPlan, style, roomType, base64Image, newColors } = payload as { designPlan: DesignPlan, style: string, roomType: string, base64Image: string, newColors?: ColorPalette };
 
                 const imagePart = { inlineData: { mimeType: 'image/jpeg', data: base64Image } };
-                // Simplified furniture list to be more concise for the image model.
                 const furnitureList = designPlan.furnitureSuggestions.map(f => f.name).join(', ');
                 const primaryColor = newColors?.color || designPlan.wallColor.color;
                 const accentColor = newColors?.accent || designPlan.wallColor.accent;
                 const isExterior = roomType.toLowerCase() === 'exterior';
   
-                // Simplified and structured the prompt for better reliability with the image model.
                 const textPrompt = isExterior
-                    ? `Task: Redesign the exterior of this building.
-Style: "${style}".
-Instructions:
-1. Keep the original building structure (architecture, windows, roof).
-2. Change main surface color to "${primaryColor}".
-3. Change trim and accent color to "${accentColor}".
-4. Replace landscaping and any movable objects to fit the style. Include: ${furnitureList}.
-5. Set lighting to be "${designPlan.lighting}".
-Goal: A single, photorealistic image. No text.`
-                    : `Task: Redesign the interior of this ${roomType}.
-Style: "${style}".
-Instructions:
-1. Keep the original room structure (walls, windows, doors).
-2. Change wall color to "${primaryColor}" (main) and "${accentColor}" (accent).
-3. Change flooring to "${designPlan.flooring}".
-4. Remove all old furniture.
-5. Add new furniture: ${furnitureList}.
-6. Set lighting to be "${designPlan.lighting}".
-Goal: A single, photorealistic image. No text.`;
+                    ? `Photorealistic exterior building makeover in a "${style}" style.
+Key changes:
+- Main surface color: ${primaryColor}.
+- Trim and accent color: ${accentColor}.
+- Landscaping and outdoor furniture: ${furnitureList}.
+- Lighting style: ${designPlan.lighting}.
+IMPORTANT: Do not change the building's architecture (windows, doors, roof). The output must be an image only, with no text.`
+                    : `Photorealistic interior design makeover of a ${roomType}.
+Design Style: ${style}.
+Key changes:
+- Remove all existing furniture.
+- Wall colors: ${primaryColor} with ${accentColor} accents.
+- Flooring: ${designPlan.flooring}.
+- New furniture to add: ${furnitureList}.
+- Lighting style: ${designPlan.lighting}.
+IMPORTANT: Do not change the room's architecture (windows, doors, walls). The output must be an image only, with no text.`;
 
 
                 const textPart = { text: textPrompt.trim() };
